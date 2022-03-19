@@ -1,12 +1,12 @@
 import http.client
 import pickle
 import json
-# import queue
 from collections import deque
 import datetime
 from pathlib import Path
 import argparse
 import os
+import sys
 
 
 # global variables
@@ -15,6 +15,7 @@ args = ''
 state = ''
 city = ''
 email = ''
+password = ''
 
 
 # get gas price by state (USA)
@@ -97,7 +98,7 @@ def compareGasPrice(city, compareType, data):
 	# dataList = list(data.queue)	# make a copy of queue
 
 	# make sure city exists in data
-	todaysVal = findCity(city, compareType, data[-1][1])
+	todaysVal = float(findCity(city, compareType, data[-1][1]))
 	if todaysVal == False:
 		print("No comparison made")
 		return False
@@ -105,18 +106,18 @@ def compareGasPrice(city, compareType, data):
 	lowestIndex = 99999
 	lowestVal = 9999999
 
-	# find lowest day of gas price history
+	# find lowest day of gas price in dataset
 	for i in range(len(data)):
-		curVal = findCity(city, compareType, data[i][1])
+		curVal = float(findCity(city, compareType, data[i][1]))
 		if lowestVal > curVal:
 			lowestIndex = i
 			lowestVal = curVal
 
 	# compare lowerest price with todays price
 	if lowestVal >= todaysVal:
-		print("Today is a great time to buy.\n$"+str(todaysVal)+" in "+city)
+		return ("Today is a great time to buy.\n$"+str(todaysVal)+" in "+city)
 	else:
-		print("Lowest was "+str(len(dataList)-lowestIndex)+" days ago")
+		return ("Lowest was "+str(len(dataList)-lowestIndex)+" days ago")
 
 
 # check if all required files exist, else create them
@@ -130,11 +131,16 @@ def initialize():
 		global state
 		global city
 		global email
+		global password
 		with open(configFile, 'r') as file:
 			lines = file.readlines()
-		state = lines[0].strip()
-		city = lines[1].strip()
-		email = lines[2].strip()
+		if len(lines) == 4:
+			state = lines[0].strip()
+			city = lines[1].strip()
+			email = lines[2].strip()
+			password = lines[3].strip()
+		else:
+			sys.exit("Error: Open "+configFile+" and add your gmail password at the end")
 
 	else:
 		parser = argparse.ArgumentParser(description='Notifies user when GAS price is low through email')
@@ -148,30 +154,40 @@ def initialize():
 
 		with open(configFile, 'w') as f:
 			f.write(args.state+'\n'+args.city+'\n'+args.email+'\n')
+		print("Open "+configFile+"\nand add your gmail password at the end")
 
 
 # email a user
-def send_email():
+def send_email(mail_from, mail_to, msg):
 	import smtplib, ssl
 
 	port = 465  # For SSL
 	smtp_server = "smtp.gmail.com"
-	sender_email = "my@gmail.com"  # Enter your address
-	receiver_email = "your@gmail.com"  # Enter receiver address
-	password = input("Type your password and press enter: ")
-	message = """\
-	Subject: Hi there
-
-	This message is sent from Python."""
+	sender_email = mail_from  # Enter your address
+	receiver_email = mail_to  # Enter receiver address
+	global password
+	message = msg
 
 	context = ssl.create_default_context()
 	with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
-	    server.login(sender_email, password)
-	    server.sendmail(sender_email, receiver_email, message)
+		server.login(sender_email, password)
+		server.sendmail(sender_email, receiver_email, message)
+
+
+# update date using API call
+def update():
+	dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
+	today = datetime.date.today()
+	gas = getGasByState(state)
+	dataNY.append((today, gas))
+	saveLoad('save', dataNY, 'gas_last_30day_NY.pkl')
+	return dataNY
 
 
 
 initialize()
+dataNY = update()
+send_email('rez.net.r6700@gmail.com', email, compareGasPrice(city, 'reg', dataNY))
 # print(findCity('buffalo', 'all', saveLoad('load', None, 'gasNY.pkl')))
 # dataNY = deque([], maxlen = 30)
 # gas = saveLoad('load', None, 'gasNY.pkl')
