@@ -166,7 +166,7 @@ def send_email(mail_from, mail_to, msg):
 	sender_email = mail_from  # Enter your address
 	receiver_email = mail_to  # Enter receiver address
 	global password
-	message = msg
+	message = "Subject: Gas Price Notification\n\n"+msg
 
 	context = ssl.create_default_context()
 	with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
@@ -186,26 +186,6 @@ def update():
 
 
 initialize()
-dataNY = update()
+# dataNY = update()
+dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
 send_email('rez.net.r6700@gmail.com', email, compareGasPrice(city, 'reg', dataNY))
-# print(findCity('buffalo', 'all', saveLoad('load', None, 'gasNY.pkl')))
-# dataNY = deque([], maxlen = 30)
-# gas = saveLoad('load', None, 'gasNY.pkl')
-# today = datetime.date(2022, 3, 16)
-# today = datetime.date.today()
-# dataNY.append((today, gas))
-# saveLoad('save', dataNY, 'gas_last_30day_NY.pkl')
-# dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
-# print(dataNY)
-# dataNY.put()
-# compareGasPrice('buffalo', 'reg', dataNY)
-# print((d))
-# gas = getGasByState('NY')
-# dataNY.append((today, gas))
-# print(saveLoad('save', dataNY, 'gas_last_30day_NY.pkl'))
-
-
-# print(y['result']['state']['lowerName'])
-# print(data.decode("utf-8")['result']['state']['lowerName'])
-
-# print(data.decode("utf-8"))
