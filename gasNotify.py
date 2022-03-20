@@ -38,7 +38,7 @@ def getGasByState(stateCode):
 	return json.loads(data.decode("utf-8")) # returns a dict
 
 
-# check for new month to backup data to HDD instead of RamDisk
+# (NOT USED) check for new month to backup data to HDD instead of RamDisk
 def end_of_month(dt):
 	todays_month = dt.month
 	tomorrows_month = (dt + datetime.timedelta(days=1)).month
@@ -138,36 +138,39 @@ def initialize():
 		global receiver
 		global token
 		global dataFile
-		required = [state, city, sender, password, receiver, token]
 		with open(configFile, 'r') as file:
 			lines = file.readlines()
 		
 		for line in lines:
 			line = line.strip().split()
 			option = line[0].lower()
-			if len(line) == 2:
-				if 'state' in option:
-					state = line[1]
-				if 'city' in option:
+			if len(line) == 1:
+				print("error: "+str(line)+ " is missing argument(s)")
+				continue
+			elif len(line) == 2:
+				if 'state' == option:
+					state = line[1].upper()
+				if 'city' == option:
 					city = line[1]
-				if 'receiver' in option:
+				if 'receiver' == option:
 					receiver = line[1]
-				if 'token' in option:
+				if 'token' == option:
 					token = line[1]
-				if 'data' in option:
+				if 'data' == option:
 					dataFile = line[1]
-			elif len(line) == 3 and 'sender' in option:
+			elif len(line) == 3 and 'sender' == option:
 				sender = line[1]
 				password = line[2]
 			else:
-				print("error: "+line+" in "+configFile+"\nhas something wrong in it. Skipping")
-			
-			missingItems = ''
-			for item in required:
-				if item is '':
-					missingItems += item+", "
-			if missingItems is not "":
-				sys.exit("Error: "+configFile+" is missing items:\n"+missingItems)
+				print("error: "+str(line)+" has unusable arguments. Please fix")
+		
+		required = [state, city, sender, password, receiver, token]
+		missingItems = ''
+		for item in required:
+			if item == '':
+				missingItems += item+", "
+		if missingItems != '':
+			sys.exit("Error: "+configFile+" is missing items:\n"+missingItems)
 
 	else:
 		parser = argparse.ArgumentParser(description='Notifies user when GAS price is low through email')
@@ -182,17 +185,19 @@ def initialize():
 
 		os.makedirs(os.path.dirname(configFile), exist_ok=True)
 
-		output = 'state ' + args.state
+		output = ('state ' + args.state
 				+ '\ncity ' + args.city
 				+ '\nsender ' + args.sender
 				+ '\nreceiver ' + args.receiver
-				+ '\ntoken ' + args.token
+				+ '\ntoken ' + args.token)
 		if args.data is not None:
 			output += '\ndata ' + args.data
+		else:
+			output += '\n data ' + str(Path.home())+'/GasNotify/gas_data_'+args.state+'.pkl'
 
 		with open(configFile, 'w') as f:
 			f.write(output)
-		print("Open "+configFile+"\nand add SENDER's password beside. e.g: sender myEmail@gmail.com 12345678")
+		sys.exit("Open "+configFile+"\nand add SENDER's password beside. e.g: sender myEmail@gmail.com 12345678")
 
 
 # email a user
@@ -214,16 +219,16 @@ def send_email(mail_from, mail_to, msg):
 
 # update date using API call
 def update():
-	dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
+	dataNY = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
 	gas = getGasByState(state)
 	dataNY.append((today, gas))
-	saveLoad('save', dataNY, 'gas_last_30day_NY.pkl')
+	saveLoad('save', dataNY, dataFile)
 	return dataNY
 
 
 
 initialize()
 dataNY = update()
-# dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
-send_email('rez.net.r6700@gmail.com', sender, compareGasPrice(city, 'reg', dataNY))
+# dataNY = saveLoad('load', None, dataFile)	# test
+send_email(sender, receiver, compareGasPrice(city, 'reg', dataNY))
