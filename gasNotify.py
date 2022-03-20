@@ -67,7 +67,7 @@ def saveLoad(type, data, fileName):
 # find a city's gas price in data
 def findCity(city, returnType, data):
 	for cities in data['result']['cities']:
-		if city in str(cities).lower():
+		if city.lower() in str(cities).lower():
 			regular = float(cities['gasoline'])
 			midGrade = float(cities['midGrade'])
 			premium = float(cities['premium'])
@@ -167,7 +167,7 @@ def initialize():
 				sender = line[1]
 				password = line[2]
 			elif len(line) >= 3 and 'city' == option:
-				for name in line:
+				for name in line[1:]:
 					city += name+" "
 				city = city.strip()
 			else:
@@ -248,4 +248,5 @@ initialize()
 dataNY = update()
 # dataNY = saveLoad('load', None, dataFile)	# test
 msg = compareGasPrice(city, 'reg', dataNY)
-send_email(sender, receiver, msg)
+print(msg)
+# send_email(sender, receiver, msg)
