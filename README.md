@@ -29,4 +29,5 @@ city new york
 receiver emailTO@gmail.com
 sender emailFROM@gmail.com PASSWORD
 token TOKEN_HERE
-data /home/USER/Cheap-Gas-Notify/gas_data_NY.pkl```
+data /home/USER/Cheap-Gas-Notify/gas_data_NY.pkl
+```
