@@ -14,8 +14,11 @@ configFile = ''
 args = ''
 state = ''
 city = ''
-email = ''
+sender = ''
 password = ''
+receiver = ''
+token = ''
+dataFile = ''
 
 
 # get gas price by state (USA)
@@ -24,7 +27,7 @@ def getGasByState(stateCode):
 
 	headers = {
 		'content-type': "application/json",
-		'authorization': "apikey 5xe4yYRAZ7VT8fGHs9uMom:2UUt710Y8KVEHPptJNWmaG"
+		'authorization': "apikey "+token
 		}
 
 	conn.request("GET", "/gasPrice/stateUsaPrice?state="+stateCode, headers=headers)
@@ -130,31 +133,66 @@ def initialize():
 	if path.exists():
 		global state
 		global city
-		global email
+		global sender
 		global password
+		global receiver
+		global token
+		global dataFile
+		required = [state, city, sender, password, receiver, token]
 		with open(configFile, 'r') as file:
 			lines = file.readlines()
-		if len(lines) == 4:
-			state = lines[0].strip()
-			city = lines[1].strip()
-			email = lines[2].strip()
-			password = lines[3].strip()
-		else:
-			sys.exit("Error: Open "+configFile+" and add your gmail password at the end")
+		
+		for line in lines:
+			line = line.strip().split()
+			option = line[0].lower()
+			if len(line) == 2:
+				if 'state' in option:
+					state = line[1]
+				if 'city' in option:
+					city = line[1]
+				if 'receiver' in option:
+					receiver = line[1]
+				if 'token' in option:
+					token = line[1]
+				if 'data' in option:
+					dataFile = line[1]
+			elif len(line) == 3 and 'sender' in option:
+				sender = line[1]
+				password = line[2]
+			else:
+				print("error: "+line+" in "+configFile+"\nhas something wrong in it. Skipping")
+			
+			missingItems = ''
+			for item in required:
+				if item is '':
+					missingItems += item+", "
+			if missingItems is not "":
+				sys.exit("Error: "+configFile+" is missing items:\n"+missingItems)
 
 	else:
 		parser = argparse.ArgumentParser(description='Notifies user when GAS price is low through email')
 		parser.add_argument('-s', '--state', help='Shortcode of an US state', required=True)
 		parser.add_argument('-c', '--city', help='Name of a city within the chosen US state', required=True)
-		parser.add_argument('-e', '--email', help='the email address to send notification to', required=True)
+		parser.add_argument('-e', '--sender', help='the sender email address to send emails from', required=True)
+		parser.add_argument('-r', '--receiver', help='the receiver email address', required=True)
+		parser.add_argument('-t', '--token', help='api token to get data from (https://collectapi.com/api/gasPrice/gas-prices-api/usaStateCode)', required=True)
+		parser.add_argument('-d', '--data', help='exact location of where the data will be stored', required=False)
 
 		args = parser.parse_args()
 
 		os.makedirs(os.path.dirname(configFile), exist_ok=True)
 
+		output = 'state ' + args.state
+				+ '\ncity ' + args.city
+				+ '\nsender ' + args.sender
+				+ '\nreceiver ' + args.receiver
+				+ '\ntoken ' + args.token
+		if args.data is not None:
+			output += '\ndata ' + args.data
+
 		with open(configFile, 'w') as f:
-			f.write(args.state+'\n'+args.city+'\n'+args.email+'\n')
-		print("Open "+configFile+"\nand add your gmail password at the end")
+			f.write(output)
+		print("Open "+configFile+"\nand add SENDER's password beside. e.g: sender myEmail@gmail.com 12345678")
 
 
 # email a user
@@ -186,6 +224,6 @@ def update():
 
 
 initialize()
-# dataNY = update()
-dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
-send_email('rez.net.r6700@gmail.com', email, compareGasPrice(city, 'reg', dataNY))
+dataNY = update()
+# dataNY = saveLoad('load', None, 'gas_last_30day_NY.pkl')
+send_email('rez.net.r6700@gmail.com', sender, compareGasPrice(city, 'reg', dataNY))
