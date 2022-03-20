@@ -166,6 +166,10 @@ def initialize():
 			elif len(line) == 3 and 'sender' == option:
 				sender = line[1]
 				password = line[2]
+			elif len(line) >= 3 and 'city' == option:
+				for name in line:
+					city += name+" "
+				city = city.strip()
 			else:
 				print("error: "+str(line)+" has unusable arguments. Please fix")
 		
