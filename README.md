@@ -23,7 +23,8 @@ the config file will be store in your home directory<br>
 
 you can manually put all these information in the config file too instead of passing them as argument to python<br>
 Example:<br>
-```state NY
+```
+state NY
 city new york
 receiver emailTO@gmail.com
 sender emailFROM@gmail.com PASSWORD
