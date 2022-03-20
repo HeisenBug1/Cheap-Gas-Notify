@@ -248,5 +248,4 @@ initialize()
 dataNY = update()
 # dataNY = saveLoad('load', None, dataFile)	# test
 msg = compareGasPrice(city, 'reg', dataNY)
-print(msg)
-# send_email(sender, receiver, msg)
+send_email(sender, receiver, msg)
