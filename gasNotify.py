@@ -98,8 +98,6 @@ def compareGasPrice(city, compareType, data):
 		print("Not data in dataset")
 		return False
 
-	# dataList = list(data.queue)	# make a copy of queue
-
 	# make sure city exists in data
 	todaysVal = float(findCity(city, compareType, data[-1][1]))
 	if todaysVal == False:
@@ -120,7 +118,14 @@ def compareGasPrice(city, compareType, data):
 	if lowestVal >= todaysVal:
 		return ("Today is a great time to buy.\n$"+str(todaysVal)+" in "+city)
 	else:
-		return ("Lowest was "+str(len(dataList)-lowestIndex)+" days ago")
+		return ("Lowest was "+str(len(data)-(lowestIndex+1))+" days ago in "+city
+			+" at $"+str(lowestVal)
+			+"\nToday is $"+str(todaysVal)
+			+" a difference of "+str(diff(todaysVal, lowestVal))+"%")
+
+# % diff between 2 values
+def diff(val1, val2):
+	return round(((abs(val1-val2)/((val1+val2)/2))*100), 2)
 
 
 # check if all required files exist, else create them
@@ -221,6 +226,13 @@ def send_email(mail_from, mail_to, msg):
 def update():
 	dataNY = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
+
+	# prevent new data addition if it already exists
+	for elm in dataNY:
+		if today in elm:
+			return dataNY
+
+	# else get new data
 	gas = getGasByState(state)
 	dataNY.append((today, gas))
 	saveLoad('save', dataNY, dataFile)
@@ -231,4 +243,5 @@ def update():
 initialize()
 dataNY = update()
 # dataNY = saveLoad('load', None, dataFile)	# test
-send_email(sender, receiver, compareGasPrice(city, 'reg', dataNY))
+msg = compareGasPrice(city, 'reg', dataNY)
+send_email(sender, receiver, msg)
