@@ -22,7 +22,41 @@ dataFile = ''
 
 
 # get gas price by state (USA)
-def getGasByState(stateCode):
+def get_gas_data(**call_api_using):
+
+	x = ''
+	y = ''
+	stateCode = ''
+
+	# iterate over all arguments passed
+	for k, v in call_api_using.items():
+		k = k.lower()
+		if k == 'x':
+			x = v
+		if k == 'y':
+			y = v
+		if k == 'state':
+			stateCode = v
+
+	# if both X,Y and state are give, prioritize the coordinates
+	if x and y != '' and stateCode != '':
+		use_coordinates = True
+		print("Prioritizing X, Y coordinates insted of state short code: "+stateCode
+			+"\nIf you only want to use state short code, then plase remove X,Y coordinates from "+configFile)
+
+	# if only state is give OR X,Y is missing one
+	elif x or y == '' and stateCode != '':
+		print("Only one coordinate is given, using state short code: "+stateCode+" instead")
+		use_coordinates = False
+
+	# if none is give then exit
+	else:
+		sys.exit('No form of API call given. Should be either X,Y coordinates or State Short Code'
+			+'\nPlease fix it in '+configFile)
+
+	print((x, y, stateCode, use_coordinates))
+	sys.exit()
+
 	conn = http.client.HTTPSConnection("api.collectapi.com")
 
 	headers = {
@@ -30,7 +64,10 @@ def getGasByState(stateCode):
 		'authorization': "apikey "+token
 		}
 
-	conn.request("GET", "/gasPrice/stateUsaPrice?state="+stateCode, headers=headers)
+	if use_coordinates is True:
+		conn.request("GET", "/gasPrice/fromCoordinates?lng="+x+"&lat="+y, headers=headers)
+	else:
+		conn.request("GET", "/gasPrice/stateUsaPrice?state="+stateCode, headers=headers)
 
 	res = conn.getresponse()
 	data = res.read()
@@ -218,7 +255,10 @@ def send_email(mail_from, mail_to, msg):
 	sender_email = mail_from  # Enter your address
 	receiver_email = mail_to  # Enter receiver address
 	global password
-	message = "Subject: Gas Price Notification\n\n"+msg
+	if 'Subject:' in msg:
+		message = msg
+	else:
+		message = "Subject: Gas Price Notification\n\n"+msg
 
 	context = ssl.create_default_context()
 	with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
@@ -237,15 +277,26 @@ def update():
 			return dataNY
 
 	# else get new data
-	gas = getGasByState(state)
-	dataNY.append((today, gas))
-	saveLoad('save', dataNY, dataFile)
+	gas = get_gas_data(state)
+
+	# if API call is successful add to database
+	if gas['success'] is True and len(gas['result']) > 0:
+		dataNY.append((today, gas))
+		saveLoad('save', dataNY, dataFile)
+
+	# else notify about error
+	else:
+		msg = "Subject: Gas App ALERT\n\nAPI call failed\n\n"+str(gas)
+		send_email(sender, receiver, msg)
+		sys.exit(msg)
+
 	return dataNY
 
 
 
 initialize()
-dataNY = update()
+# dataNY = update()
+# msg = compareGasPrice(city, 'reg', dataNY)
+# send_email(sender, receiver, msg)
+
 # dataNY = saveLoad('load', None, dataFile)	# test
-msg = compareGasPrice(city, 'reg', dataNY)
-send_email(sender, receiver, msg)
