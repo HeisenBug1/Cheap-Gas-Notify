@@ -36,13 +36,20 @@ def get_gas_data(**call_api_using):
 		if k == 'y':
 			y = v
 		if k == 'state':
-			stateCode = v
+			stateCode = v.upper()
 
 	# if both X,Y and state are give, prioritize the coordinates
 	if x and y != '' and stateCode != '':
 		use_coordinates = True
 		print("Prioritizing X, Y coordinates insted of state short code: "+stateCode
 			+"\nIf you only want to use state short code, then plase remove X,Y coordinates from "+configFile)
+	
+	# if only state short code is given
+	elif x and y == '' and stateCode != '':
+		if len(stateCode) > 2:
+			sys.exit(str(stateCode)+" is an invalid US state short code.\nPlease fix in "+configFile)
+		print("using only state code")
+		use_coordinates = False
 
 	# if only state is give OR X,Y is missing one
 	elif x or y == '' and stateCode != '':
@@ -55,7 +62,7 @@ def get_gas_data(**call_api_using):
 			+'\nPlease fix it in '+configFile)
 
 	print((x, y, stateCode, use_coordinates))
-	sys.exit()
+	return
 
 	conn = http.client.HTTPSConnection("api.collectapi.com")
 
@@ -267,7 +274,7 @@ def send_email(mail_from, mail_to, msg):
 
 
 # update date using API call
-def update():
+def update(api_call_type):
 	dataNY = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
 
@@ -277,12 +284,17 @@ def update():
 			return dataNY
 
 	# else get new data
-	gas = get_gas_data(state)
+	if type(api_call_type) == tuple:
+		gas = get_gas_data(x=str(api_call_type[0]), y=str(api_call_type[1]))
+	elif type(api_call_type) == str:
+		gas = get_gas_data(state=api_call_type)
+	else:
+		sys.exit("Invalid API call type")
 
 	# if API call is successful add to database
 	if gas['success'] is True and len(gas['result']) > 0:
 		dataNY.append((today, gas))
-		saveLoad('save', dataNY, dataFile)
+		# saveLoad('save', dataNY, dataFile)
 
 	# else notify about error
 	else:
@@ -295,8 +307,15 @@ def update():
 
 
 initialize()
-# dataNY = update()
+# dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
 # msg = compareGasPrice(city, 'reg', dataNY)
 # send_email(sender, receiver, msg)
 
 # dataNY = saveLoad('load', None, dataFile)	# test
+
+print("Only XY")
+get_gas_data(x=1, y=2)
+print("-----------\n\nOnly state")
+get_gas_data(state='NYC')
+print("-----------\n\nX and state")
+get_gas_data(y=2, state="NYC")
