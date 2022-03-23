@@ -61,7 +61,6 @@ def get_gas_data(**call_api_using):
 	if use_coordinates is False and stateCode == '':
 		sys.exit("No valid form of API call given. Received: "+str((x, y, stateCode))
 			+"\nPlease fix in "+configFile)
-	return
 
 	conn = http.client.HTTPSConnection("api.collectapi.com")
 
@@ -293,7 +292,7 @@ def update(api_call_type):
 	# if API call is successful add to database
 	if gas['success'] is True and len(gas['result']) > 0:
 		dataNY.append((today, gas))
-		# saveLoad('save', dataNY, dataFile)
+		saveLoad('save', dataNY, dataFile)
 
 	# else notify about error
 	else:
@@ -306,17 +305,8 @@ def update(api_call_type):
 
 
 initialize()
-# dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
-# msg = compareGasPrice(city, 'reg', dataNY)
-# send_email(sender, receiver, msg)
+dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
+msg = compareGasPrice(city, 'reg', dataNY)
+send_email(sender, receiver, msg)
 
 # dataNY = saveLoad('load', None, dataFile)	# test
-
-print("X,Y")
-get_gas_data(x='1', y="2")
-
-print("\nState ONLY")
-get_gas_data(state='NY')
-
-print("\nX and State")
-get_gas_data(x="2", state="NYC")
