@@ -23,45 +23,44 @@ dataFile = ''
 
 # get gas price by state (USA)
 def get_gas_data(**call_api_using):
-
 	x = ''
 	y = ''
 	stateCode = ''
+	use_coordinates = False
 
 	# iterate over all arguments passed
 	for k, v in call_api_using.items():
 		k = k.lower()
 		if k == 'x':
-			x = v
+			x = v.strip()
 		if k == 'y':
-			y = v
+			y = v.strip()
 		if k == 'state':
-			stateCode = v.upper()
+			stateCode = v.strip().upper()
+
+	# verify X,Y cords if they exist
+	if x != '' or y != '':
+		try:
+			float(x)
+			float(y)
+		except:
+			print("X,Y coordinates: "+str((x, y))+" is invalid.\nPleae fix in "+configFile)
+		else:
+			use_coordinates = True
 
 	# if both X,Y and state are give, prioritize the coordinates
-	if x and y != '' and stateCode != '':
-		use_coordinates = True
-		print("Prioritizing X, Y coordinates insted of state short code: "+stateCode
+	if use_coordinates is True and stateCode != '':
+		print("Prioritizing X,Y coordinates insted of state short code: "+stateCode
 			+"\nIf you only want to use state short code, then plase remove X,Y coordinates from "+configFile)
+
+	# verify state code is correct
+	if use_coordinates is False and len(stateCode) != 2:
+		sys.exit(str(stateCode)+" is an invalid US state short code.\nPlease fix in "+configFile)
 	
-	# if only state short code is given
-	elif x and y == '' and stateCode != '':
-		if len(stateCode) > 2:
-			sys.exit(str(stateCode)+" is an invalid US state short code.\nPlease fix in "+configFile)
-		print("using only state code")
-		use_coordinates = False
-
-	# if only state is give OR X,Y is missing one
-	elif x or y == '' and stateCode != '':
-		print("Only one coordinate is given, using state short code: "+stateCode+" instead")
-		use_coordinates = False
-
-	# if none is give then exit
-	else:
-		sys.exit('No form of API call given. Should be either X,Y coordinates or State Short Code'
-			+'\nPlease fix it in '+configFile)
-
-	print((x, y, stateCode, use_coordinates))
+	# if nothing is given
+	if use_coordinates is False and stateCode == '':
+		sys.exit("No valid form of API call given. Received: "+str((x, y, stateCode))
+			+"\nPlease fix in "+configFile)
 	return
 
 	conn = http.client.HTTPSConnection("api.collectapi.com")
@@ -313,9 +312,11 @@ initialize()
 
 # dataNY = saveLoad('load', None, dataFile)	# test
 
-print("Only XY")
-get_gas_data(x=1, y=2)
-print("-----------\n\nOnly state")
-get_gas_data(state='NYC')
-print("-----------\n\nX and state")
-get_gas_data(y=2, state="NYC")
+print("X,Y")
+get_gas_data(x='1', y="2")
+
+print("\nState ONLY")
+get_gas_data(state='NY')
+
+print("\nX and State")
+get_gas_data(x="2", state="NYC")
