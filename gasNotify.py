@@ -307,6 +307,9 @@ def update(api_call_type):
 initialize()
 dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
 msg = compareGasPrice(city, 'reg', dataNY)
-send_email(sender, receiver, msg)
+if sys.stdout.isatty() is True:
+	print(msg)
+else:
+	send_email(sender, receiver, msg)
 
 # dataNY = saveLoad('load', None, dataFile)	# test
