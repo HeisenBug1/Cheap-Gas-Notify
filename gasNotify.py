@@ -282,9 +282,9 @@ def update(api_call_type):
 			return dataNY
 
 	# else get new data
-	if type(api_call_type) == tuple:
+	if type(api_call_type) == tuple:	# X,Y coordinates
 		gas = get_gas_data(x=str(api_call_type[0]), y=str(api_call_type[1]))
-	elif type(api_call_type) == str:
+	elif type(api_call_type) == str:	# US State (eg: NY)
 		gas = get_gas_data(state=api_call_type)
 	else:
 		sys.exit("Invalid API call type")
