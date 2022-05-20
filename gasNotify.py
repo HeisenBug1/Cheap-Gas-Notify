@@ -140,7 +140,7 @@ def compareGasPrice(city, compareType, data):
 		print("Not data in dataset")
 		return False
 
-	# make sure city exists in data
+	# make sure a value exists for the city in data
 	todaysVal = float(findCity(city, compareType, data[-1][1]))
 	if todaysVal == False:
 		print("No comparison made")
@@ -148,22 +148,39 @@ def compareGasPrice(city, compareType, data):
 
 	lowestIndex = 99999
 	lowestVal = 9999999
+	highestIndex = 99999
+	highestVal = 0
 
 	# find lowest day of gas price in dataset
 	for i in range(len(data)):
 		curVal = float(findCity(city, compareType, data[i][1]))
+
+		# find lowest
 		if lowestVal > curVal:
 			lowestIndex = i
 			lowestVal = curVal
 
+		# find highest
+		if highestVal < curVal:
+			highestVal = curVal
+			highestIndex = i
+
 	# compare lowerest price with todays price
 	if lowestVal >= todaysVal:
-		return ("Today is a great time to buy.\n$"+str(todaysVal)+" in "+city)
+		return ("Today is a great time to buy.\n$"+str(round(todaysVal, 2))+" in "+city)
 	else:
-		return ("Lowest was "+str(len(data)-(lowestIndex+1))+" days ago in "+city
-			+" at $"+str(lowestVal)
-			+"\nToday is $"+str(todaysVal)
-			+" a difference of "+str(diff(todaysVal, lowestVal))+"%")
+		lowestDay = len(data)-(lowestIndex+1)
+		highestDay = len(data)-(highestIndex+1)
+
+		output = "Today is $"+str(round(todaysVal, 2))
+		output += "\n\nLowest was "+str(lowestDay)+" days ago in "+city+" at $"+str(round(lowestVal, 2))
+		output += " a difference of $"+str(round((todaysVal - lowestVal), 2))
+		output += " ("+str(diff(todaysVal, lowestVal))+"%)"
+		if highestDay > 0:
+			output += "\n\nHighest was "+str(highestDay)+" days ago at $"+str(round(highestVal, 2))
+		else:
+			output += "\n\nHighest is today."
+		return output
 
 # % diff between 2 values
 def diff(val1, val2):
