@@ -169,17 +169,19 @@ def compareGasPrice(city, compareType, data):
 	if lowestVal >= todaysVal:
 		return ("Today is a great time to buy.\n$"+str(round(todaysVal, 2))+" in "+city)
 	else:
-		lowestDay = len(data)-(lowestIndex+1)
-		highestDay = len(data)-(highestIndex+1)
+		lowestDay = len(data)-(lowestIndex)
+		highestDay = len(data)-(highestIndex)
 
 		output = "Today is $"+str(round(todaysVal, 2))
 		output += "\n\nLowest was "+str(lowestDay)+" days ago in "+city+" at $"+str(round(lowestVal, 2))
 		output += " a difference of $"+str(round((todaysVal - lowestVal), 2))
 		output += " ("+str(diff(todaysVal, lowestVal))+"%)"
+
 		if highestDay > 0:
 			output += "\n\nHighest was "+str(highestDay)+" days ago at $"+str(round(highestVal, 2))
 		else:
 			output += "\n\nHighest is today."
+			
 		return output
 
 # % diff between 2 values
