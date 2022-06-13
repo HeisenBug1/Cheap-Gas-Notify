@@ -269,6 +269,11 @@ def initialize():
 					token = line[1]
 				if 'data' == option:
 					dataFile = line[1]
+					dataFilePath = Path(dataFile)
+					# create data file if it does not exist
+					if not dataFilePath.exists():
+						d = deque(maxlen=30)  # only holds 30 items
+						saveLoad('save', d, dataFile)
 			elif len(line) == 3 and 'sender' == option:
 				sender = line[1]
 				password = line[2]
@@ -280,15 +285,16 @@ def initialize():
 				print("error: "+str(line)+" has unusable arguments. Please fix")
 		
 		# required items to run app
-		required = [state, city, sender, password, receiver, token]
+		required = [state, city, sender, password, receiver, token, dataFile]
+		req_text = ['state', 'city', 'sender', 'password', 'receiver', 'token', 'data']
 		missingItems = ''
 
 		# if any item in reqired is missing, then print error and exit
-		for item in required:
-			if item == '':
-				missingItems += item+", "
+		for i in range(len(required)):
+			if required[i] == '':
+				missingItems += req_text[i]+", "
 		if missingItems != '':
-			sys.exit("Error: "+configFile+" is missing items:\n"+missingItems)
+			sys.exit("Error: "+configFile+" is missing arguments in:\n"+missingItems)
 
 	else:
 		parser = argparse.ArgumentParser(description='Notifies user when GAS price is low through email')
