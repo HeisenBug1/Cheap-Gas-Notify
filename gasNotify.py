@@ -50,7 +50,7 @@ def get_plot(data, fileName=None):
 		plt.ylabel('Price')
 		  
 		# # giving a title to my graph
-		plt.title('30 Day Gas Price in '+city)
+		plt.title(str(len(data))+' Day Gas Price in '+city)
 
 		# rotate x tick labels to fit properly
 		plt.xticks(rotation=30)
