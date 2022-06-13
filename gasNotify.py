@@ -223,7 +223,7 @@ def compareGasPrice(city, compareType, data):
 		output += " ("+str(diff(todaysVal, lowestVal))+"%)"
 
 		if highestDay.days > 0:
-			output += "\n\nHighest was "+str(highestDay)+" days ago at $"+str(round(highestVal, 2))
+			output += "\n\nHighest was "+str(highestDay.days)+" days ago at $"+str(round(highestVal, 2))
 		else:
 			output += "\n\nHighest is today."
 			
@@ -415,7 +415,7 @@ initialize()
 dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
 # dataNY = saveLoad('load', None, dataFile)	# test
 msg = compareGasPrice(city, 'reg', dataNY)
-if sys.stdout.isatty() is False:
+if sys.stdout.isatty() is True:
 	print(msg)
 else:
 	plot = get_plot(dataNY, "plot.png")
