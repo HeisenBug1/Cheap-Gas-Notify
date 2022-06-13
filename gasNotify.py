@@ -1,12 +1,6 @@
-import http.client
-import pickle
-import json
+import http.client, pickle, json, datetime, argparse, os, sys
 from collections import deque
-import datetime
 from pathlib import Path
-import argparse
-import os
-import sys
 
 
 # global variables
