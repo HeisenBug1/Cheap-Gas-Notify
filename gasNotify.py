@@ -150,18 +150,20 @@ def compareGasPrice(city, compareType, data):
 	lowestVal = 9999999
 	highestIndex = 99999
 	highestVal = 0
+	today = data[-1][0]	# datetime object
 
 	# find lowest day of gas price in dataset
 	for i in range(len(data)):
 		curVal = float(findCity(city, compareType, data[i][1]))
+		curDate = data[i][0]
 
 		# find lowest
-		if lowestVal > curVal:
+		if lowestVal >= curVal:
 			lowestIndex = i
 			lowestVal = curVal
 
 		# find highest
-		if highestVal < curVal:
+		if highestVal <= curVal:
 			highestVal = curVal
 			highestIndex = i
 
@@ -169,15 +171,15 @@ def compareGasPrice(city, compareType, data):
 	if lowestVal >= todaysVal:
 		return ("Today is a great time to buy.\n$"+str(round(todaysVal, 2))+" in "+city)
 	else:
-		lowestDay = len(data)-(lowestIndex)
-		highestDay = len(data)-(highestIndex)
+		lowestDay = today - data[lowestIndex][0]
+		highestDay = today - data[highestIndex][0]
 
 		output = "Today is $"+str(round(todaysVal, 2))
-		output += "\n\nLowest was "+str(lowestDay)+" days ago in "+city+" at $"+str(round(lowestVal, 2))
+		output += "\n\nLowest was "+str(lowestDay.days)+" days ago in "+city+" at $"+str(round(lowestVal, 2))
 		output += " a difference of $"+str(round((todaysVal - lowestVal), 2))
 		output += " ("+str(diff(todaysVal, lowestVal))+"%)"
 
-		if highestDay > 0:
+		if highestDay.days > 0:
 			output += "\n\nHighest was "+str(highestDay)+" days ago at $"+str(round(highestVal, 2))
 		else:
 			output += "\n\nHighest is today."
@@ -234,8 +236,11 @@ def initialize():
 			else:
 				print("error: "+str(line)+" has unusable arguments. Please fix")
 		
+		# required items to run app
 		required = [state, city, sender, password, receiver, token]
 		missingItems = ''
+
+		# if any item in reqired is missing, then print error and exit
 		for item in required:
 			if item == '':
 				missingItems += item+", "
