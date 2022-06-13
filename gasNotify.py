@@ -33,34 +33,39 @@ def get_XY(data):
 # create a plot of the date
 def get_plot(data, fileName=None):
 
-	import matplotlib.pyplot as plt
+	try:
+		import matplotlib.pyplot as plt
 
-	x, y = get_XY(data)
+		x, y = get_XY(data)
 
-	# set figure size
-	plt.figure(figsize=(12,6), dpi=200)
-	  
-	# # plotting the points 
-	plt.plot(x, y)
-	  
-	# # naming the x axis
-	plt.xlabel('Date')
-	# # naming the y axis
-	plt.ylabel('Price')
-	  
-	# # giving a title to my graph
-	plt.title('30 Day Gas Price in '+city)
+		# set figure size
+		plt.figure(figsize=(12,6), dpi=200)
+		  
+		# # plotting the points 
+		plt.plot(x, y)
+		  
+		# # naming the x axis
+		plt.xlabel('Date')
+		# # naming the y axis
+		plt.ylabel('Price')
+		  
+		# # giving a title to my graph
+		plt.title('30 Day Gas Price in '+city)
 
-	# rotate x tick labels to fit properly
-	plt.xticks(rotation=30)
+		# rotate x tick labels to fit properly
+		plt.xticks(rotation=30)
 
-	if fileName is None:
-		# function to show the plot
-		plt.show()
-	else:
-		path = dataFile+fileName
-		plt.savefig(path)
-		return(path)
+		if fileName is None:
+			# function to show the plot
+			plt.show()
+		else:
+			path = dataFile+fileName
+			plt.savefig(path)
+			return(path)
+
+	except ModuleNotFoundError:
+		print("MatPlotLib is not installed")
+		return None
 
 
 
@@ -416,15 +421,16 @@ def update(api_call_type):
 	return dataNY
 
 
-
-initialize()
-dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
-# dataNY = saveLoad('load', None, dataFile)	# test
-msg = compareGasPrice(city, 'reg', dataNY)
-if sys.stdout.isatty() is True:
-	print(msg)
-else:
-	plot = get_plot(dataNY, "plot.png")
-	send_email(msg, plot)	# new email function
-	# send_email(sender, receiver, msg)	# old email function
+# make sure this script is run directly and not as a module
+if __name__ == "__main__":
+	initialize()
+	dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
+	# dataNY = saveLoad('load', None, dataFile)	# test
+	msg = compareGasPrice(city, 'reg', dataNY)
+	if sys.stdout.isatty() is True:
+		print(msg)
+	else:
+		plot = get_plot(dataNY, "plot.png")
+		send_email(msg, plot)	# new email function
+		# send_email(sender, receiver, msg)	# old email function
 
