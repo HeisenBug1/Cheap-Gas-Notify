@@ -15,6 +15,55 @@ token = ''
 dataFile = ''
 
 
+# get X, Y value for plotting
+def get_XY(data):
+	x = []
+	y = []
+	# elm = tuple --> (datetime, dict)
+	for elm in data:
+		x.append(elm[0].strftime("%b %d"))
+		cities = elm[1]['result']['cities']
+		for a_city in cities:
+			if city.lower() in a_city['lowerName']:
+				y.append(float(a_city['gasoline']))
+
+	return (x, y)
+
+
+# create a plot of the date
+def get_plot(data, fileName=None):
+
+	import matplotlib.pyplot as plt
+
+	x, y = get_XY(data)
+
+	# set figure size
+	plt.figure(figsize=(12,6), dpi=200)
+	  
+	# # plotting the points 
+	plt.plot(x, y)
+	  
+	# # naming the x axis
+	plt.xlabel('Date')
+	# # naming the y axis
+	plt.ylabel('Price')
+	  
+	# # giving a title to my graph
+	plt.title('30 Day Gas Price in '+city)
+
+	# rotate x tick labels to fit properly
+	plt.xticks(rotation=30)
+
+	if fileName is None:
+		# function to show the plot
+		plt.show()
+	else:
+		path = dataFile+fileName
+		plt.savefig(path)
+		return(path)
+
+
+
 # get gas price by state (USA)
 def get_gas_data(**call_api_using):
 	x = ''
@@ -289,6 +338,46 @@ def send_email(mail_from, mail_to, msg):
 		server.sendmail(sender_email, receiver_email, message)
 
 
+# convert text with newlines to HTML format
+def to_html(msg):
+	# print(msg)
+	new_msg = ""
+	for line in msg.splitlines():
+		new_msg += line + "<br>"
+	return new_msg
+
+
+# test email
+def send_email(body, plot=None):
+	import smtplib, ssl
+	from email.mime.multipart import MIMEMultipart
+	from email.mime.text import MIMEText
+	from email.mime.image import MIMEImage
+
+	msg = MIMEMultipart()
+	msg['Subject'] = 'Gas Price Notification'
+	msg['From'] = sender
+	msg['To'] = receiver
+
+	body = to_html(body)
+
+	msgText = MIMEText('<p>%s</p>' % (body), 'html')
+	msg.attach(msgText)
+
+	if plot is not None:
+		with open(plot, 'rb') as fp:
+			img = MIMEImage(fp.read())
+			img.add_header('Content-Disposition', 'attachment', filename=plot)
+			msg.attach(img)
+
+	port = 465  # For SSL
+	smtp_server = "smtp.gmail.com"
+	context = ssl.create_default_context()
+	with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+		server.login(sender, password)
+		server.sendmail(sender, receiver, msg.as_string())
+
+
 # update date using API call
 def update(api_call_type):
 	dataNY = saveLoad('load', None, dataFile)
@@ -324,10 +413,12 @@ def update(api_call_type):
 
 initialize()
 dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
+# dataNY = saveLoad('load', None, dataFile)	# test
 msg = compareGasPrice(city, 'reg', dataNY)
-if sys.stdout.isatty() is True:
+if sys.stdout.isatty() is False:
 	print(msg)
 else:
-	send_email(sender, receiver, msg)
+	plot = get_plot(dataNY, "plot.png")
+	send_email(msg, plot)	# new email function
+	# send_email(sender, receiver, msg)	# old email function
 
-# dataNY = saveLoad('load', None, dataFile)	# test
