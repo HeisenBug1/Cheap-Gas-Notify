@@ -247,6 +247,7 @@ def initialize():
 	configFile = str(Path.home())+'/GasNotify/config.txt'
 	path = Path(configFile)
 	if path.exists():
+		print("Found config file: "+configFile)
 		global state
 		global city
 		global sender
@@ -328,9 +329,11 @@ def initialize():
 			f.write(output)
 		sys.exit("Open "+configFile+"\nand add SENDER's password beside. e.g: sender myEmail@gmail.com 12345678")
 
+	print("Initialization complete ...")
+
 
 # email a user
-def send_email(mail_from, mail_to, msg):
+def send_email_OLD(mail_from, mail_to, msg):
 	import smtplib, ssl
 
 	port = 465  # For SSL
@@ -402,8 +405,10 @@ def update(api_call_type):
 	# else get new data
 	if type(api_call_type) == tuple:	# X,Y coordinates
 		gas = get_gas_data(x=str(api_call_type[0]), y=str(api_call_type[1]))
+		print("API call completed ...")
 	elif type(api_call_type) == str:	# US State (eg: NY)
 		gas = get_gas_data(state=api_call_type)
+		print("API call completed ...")
 	else:
 		sys.exit("Invalid API call type")
 
@@ -411,11 +416,12 @@ def update(api_call_type):
 	if gas['success'] is True and len(gas['result']) > 0:
 		dataNY.append((today, gas))
 		saveLoad('save', dataNY, dataFile)
+		print("New gas data added to database ..")
 
 	# else notify about error
 	else:
 		msg = "Subject: Gas App ALERT\n\nAPI call failed\n\n"+str(gas)
-		send_email(sender, receiver, msg)
+		send_email_OLD(sender, receiver, msg)
 		sys.exit(msg)
 
 	return dataNY
