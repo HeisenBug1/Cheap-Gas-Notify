@@ -22,8 +22,9 @@ def get_gb_data(soup):
             (..., ..., ...),
             (..., ..., ...)
         ]
+        example: [ ( Exxon, (123 Jump St, Manhattan, NY), $13.99 ) ]
     """
-    data = []
+    all_data = []
 
     # loop through each HTML element to extract specific information
     for elm in elements:
@@ -31,9 +32,12 @@ def get_gb_data(soup):
         station_name = elm.find("h3", attrs={'class': re.compile('^header.*')})
         station_address = elm.find("div", attrs={'class': re.compile('^StationDisplay-module__address.*')})
         price = elm.find("div", attrs={'class': re.compile('^StationDisplayPrice-module__priceContainer.*')}).find('span')
+
+        station_data = (station_name.text, format_address(station_address.text), price.text)
+        # call function here to verify data before appending to all_data
         
         # add data to list as a tuple for each iteration
-        data.append((station_name.text, station_address.text, price.text))
+        all_data.append(station_data)
 
     return data
 
