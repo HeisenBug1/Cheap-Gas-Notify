@@ -1,3 +1,4 @@
+from audioop import add
 import requests, re
 from bs4 import BeautifulSoup
 
@@ -35,3 +36,27 @@ def get_gb_data(soup):
         data.append((station_name.text, station_address.text, price.text))
 
     return data
+
+# format gas station address
+def format_address(address):
+    was_space = False
+    index = 0
+
+    for char in address:
+        if was_space == False and char.isupper():
+            # found index in string that separates street with city
+            break
+            # return index
+        if char == ' ':
+            was_space = True
+        else:
+            was_space = False
+        index += 1
+
+    street = address[:index]
+    city, state = address[index:].split(",")
+    city = city.strip()
+    state = state.strip()
+
+    # return tuple (street, city, state)
+    return (street, city, state)
