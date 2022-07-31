@@ -4,22 +4,28 @@ from bs4 import BeautifulSoup
 
 
 # verify zipcode
-def verify_zipCode(input):
-    pattern = re.compile(r"^[0-9]+$")
-    zipCode = pattern.match(str(input))[0]
-    zipCode_length = len(zipCode)
+def verify_zipCode(zipCode):
 
-    if zipCode_length > 0 and zipCode_length < 6:
-    	return zipCode
+	if type(zipCode) is not str:
+		zipCode = str(zipCode)
+	zipCode.strip()
 
-    return None
+	zipCode_length = len(zipCode)
+
+	pattern = re.compile(r"^[0-9]+$")
+	zipCode = pattern.match(zipCode)
+
+	if zipCode_length != 5 or zipCode is None:
+		return None
+
+	return zipCode[0]
 
 
 # get soup object
 def get_soup(zip_code):
 	verified_zip_code = verify_zipCode(zip_code)
 	if verified_zip_code is None:
-		print("Error: "+str(zip_code)+" is not a corrent Zip code.")
+		print("Error: "+str(zip_code)+" is not a correct zip code")
 		sys.exit(1)
 	URL = "https://www.gasbuddy.com/home?search="+ verified_zip_code +"&fuel=1&maxAge=0&method=credit"
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36'}
@@ -28,7 +34,17 @@ def get_soup(zip_code):
 
 
 # extract data from gas buddy
-def get_gb_data(soup):
+def get_gb_data(input_var):
+
+	if type(input_var) is str or type(input_var) is int:
+		soup = get_soup(input_var)
+
+	elif type(input_var) is bs4.BeautifulSoup:
+		soup = input_var
+
+	else:
+		print("Error: "+type(input_var)+" received.\nRequired either zip code or bs4 object")
+		sys.exit(2)
 
 	# get all relative HTML elements containing gas price data
 	elements = soup.find_all("div", attrs={'class': re.compile('^GenericStationListItem-module__stationListItem.*')})
