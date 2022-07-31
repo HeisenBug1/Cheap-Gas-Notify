@@ -8,7 +8,7 @@ def get_soup(URL):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36'}
     page = requests.get(URL, headers=headers)
     return BeautifulSoup(page.content, "html.parser")
-    
+
 
 # extract data from gas buddy
 def get_gb_data(soup):
@@ -34,7 +34,7 @@ def get_gb_data(soup):
         station_address = elm.find("div", attrs={'class': re.compile('^StationDisplay-module__address.*')})
         price = elm.find("div", attrs={'class': re.compile('^StationDisplayPrice-module__priceContainer.*')}).find('span')
 
-        station_data = (station_name.text, format_address(station_address.text), price.text)
+        station_data = (station_name.text, format_address(station_address.text), format_price(price.text))
         # call function here to verify data before appending to all_data
         
         # add data to list as a tuple for each iteration
