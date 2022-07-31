@@ -38,7 +38,7 @@ def get_gb_data(input_var):
 	if type(input_var) is str or type(input_var) is int:
 		soup = get_soup(input_var)
 
-	elif type(input_var) is bs4.BeautifulSoup:
+	elif type(input_var) is BeautifulSoup:
 		soup = input_var
 
 	else:
