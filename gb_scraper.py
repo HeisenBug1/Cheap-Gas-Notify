@@ -39,7 +39,7 @@ def get_gb_data(soup):
         # add data to list as a tuple for each iteration
         all_data.append(station_data)
 
-    return data
+    return all_data
 
 # format gas station address
 def format_address(address):
