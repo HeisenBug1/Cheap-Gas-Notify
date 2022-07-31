@@ -8,6 +8,7 @@ def get_soup(URL):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36'}
     page = requests.get(URL, headers=headers)
     return BeautifulSoup(page.content, "html.parser")
+    
 
 # extract data from gas buddy
 def get_gb_data(soup):
@@ -40,6 +41,14 @@ def get_gb_data(soup):
         all_data.append(station_data)
 
     return all_data
+
+
+# format gas price (remove $ sign)
+def format_price(price):
+    if "$" in price:
+        return price.split("$")[1]
+    return None
+
 
 # format gas station address
 def format_address(address):
