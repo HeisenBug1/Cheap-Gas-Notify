@@ -1,10 +1,27 @@
 from audioop import add
-import requests, re
+import requests, re, sys
 from bs4 import BeautifulSoup
 
 
+# verify zipcode
+def verify_zipCode(input):
+    pattern = re.compile(r"^[0-9]+$")
+    zipCode = pattern.match(str(input))[0]
+    zipCode_length = len(zipCode)
+
+    if zipCode_length > 0 and zipCode_length < 6:
+    	return zipCode
+
+    return None
+
+
 # get soup object
-def get_soup(URL):
+def get_soup(zip_code):
+	verified_zip_code = verify_zipCode(zip_code)
+	if verified_zip_code is None:
+		print("Error: "+str(zip_code)+" is not a corrent Zip code.")
+		sys.exit(1)
+	URL = "https://www.gasbuddy.com/home?search="+ verified_zip_code +"&fuel=1&maxAge=0&method=credit"
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36'}
 	page = requests.get(URL, headers=headers)
 	return BeautifulSoup(page.content, "html.parser")
