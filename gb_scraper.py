@@ -30,24 +30,37 @@ def get_gb_data(soup):
     # loop through each HTML element to extract specific information
     for elm in elements:
 
+        price = elm.find("div", attrs={'class': re.compile('^StationDisplayPrice-module__priceContainer.*')})
+        price = price.find('span')
+        price = format_price(price.text)
+
+        # skip to next if price DNE
+        if price is None:
+            continue
+
         station_name = elm.find("h3", attrs={'class': re.compile('^header.*')})
         station_address = elm.find("div", attrs={'class': re.compile('^StationDisplay-module__address.*')})
-        price = elm.find("div", attrs={'class': re.compile('^StationDisplayPrice-module__priceContainer.*')}).find('span')
 
-        station_data = (station_name.text, format_address(station_address.text), format_price(price.text))
+        station_data = (station_name.text, format_address(station_address.text), price)
         # call function here to verify data before appending to all_data
         
         # add data to list as a tuple for each iteration
         all_data.append(station_data)
 
+    all_data.sort(key = sort_key)
     return all_data
 
 
 # format gas price (remove $ sign)
 def format_price(price):
     if "$" in price:
-        return price.split("$")[1]
+        return float(price.split("$")[1])
     return None
+
+
+# sort function key
+def sort_key(element):
+    return element[2]
 
 
 # format gas station address
