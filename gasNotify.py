@@ -300,9 +300,9 @@ def update():
 	data = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
 
-	# prevent new data addition if it already exists
+	# prevent duplicate date (modify instead of new addition)
 	if today == data[-1][0]:
-		return data
+		del data[-1]
 
 	gas = gb.get_gb_data(zipCode)
 
