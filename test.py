@@ -36,13 +36,30 @@ def load_soup(location=None):
 # print(gb.get_gb_data(14043))
 # print(type(12))
 # soup = load_soup("/home/rez/ramdisk/gas_data_NY_persistent.pkl")
+
+
+
 data = load_soup("/home/rez/ramdisk/14043.pkl")
+# print(type(data[0][1]))
+print(data[0][1])
+
+
+
+
+
+
 # print(data[-1][0])
-date = datetime.date(2022, 7, 21)
-if date == data[-1][0]:
-	print('True')
-else:
-	print('False')
+# date = datetime.date(2022, 7, 21)
+# if date == data[-1][0]:
+# 	print('True')
+# else:
+# 	print('False')
+
+
+# data = gb.get_gb_data(14043)
+# pickle_obj(data, '/home/rez/ramdisk/gasData.pkl')
+# data = load_soup('/home/rez/ramdisk/gasData.pkl')
+# print(data[0][2])
 
 
 
