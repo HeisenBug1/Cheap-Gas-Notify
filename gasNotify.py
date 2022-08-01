@@ -18,24 +18,27 @@ zipCode = None
 def get_XY(data):
 	x = []
 	y = []
-	# elm = tuple --> (datetime, dict)
-	for elm in data:
-		x.append(elm[0].strftime("%b %d"))
-		cities = elm[1]['result']['cities']
-		for a_city in cities:
-			if city.lower() in a_city['lowerName']:
-				y.append(float(a_city['gasoline']))
-
+	# elm = tuple --> (datetime, price_string)
+	for date, price in data:
+		x.append(date.strftime("%b %d"))
+		y.append(float(price))
 	return (x, y)
 
 
 # create a plot of the date
-def get_plot(data, fileName=None):
+def get_plot(data, fileName=None, days=30):
+
+	try:
+		days = -abs(days)
+	except:
+		print("Error: days parameter is not an integer")
+		print("\tDefaulting to entire dataset")
+		days = 0
 
 	try:
 		import matplotlib.pyplot as plt
 
-		x, y = get_XY(data)
+		x, y = get_XY(data[days:])
 
 		# set figure size
 		plt.figure(figsize=(12,6), dpi=200)
@@ -49,7 +52,7 @@ def get_plot(data, fileName=None):
 		plt.ylabel('Price')
 		  
 		# # giving a title to my graph
-		plt.title(str(len(data))+' Day Gas Price in '+city)
+		plt.title(str(len(data[days:]))+' Day Gas Price in '+zipCode)
 
 		# rotate x tick labels to fit properly
 		plt.xticks(rotation=30)
@@ -328,7 +331,7 @@ if __name__ == "__main__":
 	if sys.stdout.isatty() is True:
 		print(msg)
 	else:
-		plot = get_plot(data, "plot.png")
+		plot = get_plot(data, "plot.png", days=30)
 		send_email(msg, plot)	# new email function
 		# send_email(sender, receiver, msg)	# old email function
 
