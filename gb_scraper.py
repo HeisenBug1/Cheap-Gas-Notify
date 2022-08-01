@@ -91,8 +91,10 @@ def get_gb_data(input_var):
 		# add data to list as a tuple for each iteration
 		all_data.append(station_data)
 
-	all_data.sort(key = sort_key)
-	return (get_median(all_data), all_data)
+	if len(all_data) > 0:
+		all_data.sort(key = sort_key)
+		return (get_median(all_data), all_data)
+	return None
 
 
 # format gas price (remove $ sign)
