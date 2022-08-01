@@ -221,11 +221,11 @@ def initialize():
 
 		output = ('sender ' + args.sender
 				+ '\nreceiver ' + args.receiver
-				+ '\nzip' + args.zip)
+				+ '\nzip ' + args.zip)
 		if args.data is not None:
 			output += '\ndata ' + args.data
 		else:
-			output += '\n data ' + str(Path.home())+'/GasNotify/gas_data_'+args.zip+'.pkl'
+			output += '\ndata ' + str(Path.home())+'/GasNotify/gas_data_'+args.zip+'.pkl'
 
 		with open(configFile, 'w') as f:
 			f.write(output)
