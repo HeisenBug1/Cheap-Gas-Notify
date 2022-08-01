@@ -23,13 +23,14 @@ def verify_zipCode(zipCode):
 # get median
 def get_median(dataList):
 	n = len(dataList)
-	if n % 2 == 0:
-		median1 = dataList[n//2]
-		median2 = dataList[n//2 - 1]
-		median = (median1 + median2)/2
-	else:
-		median = dataList[n//2]
-	return median
+	# if n % 2 == 0:
+	# 	median1 = dataList[n//2]
+	# 	median2 = dataList[n//2 - 1]
+	# 	median = (median1 + median2)/2
+	# else:
+	# 	median = dataList[n//2]
+	# return median
+	return dataList[n//2]
 
 
 # get soup object
