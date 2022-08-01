@@ -1,42 +1,44 @@
 import http.client, pickle, json, datetime, argparse, os, sys
-from collections import deque
+# from collections import deque
 from pathlib import Path
+import gb_scraper as gb
 
 
 # global variables
 configFile = ''
 args = ''
-state = ''
-city = ''
 sender = ''
 password = ''
 receiver = ''
-token = ''
 dataFile = ''
+zipCode = None
 
 
 # get X, Y value for plotting
 def get_XY(data):
 	x = []
 	y = []
-	# elm = tuple --> (datetime, dict)
-	for elm in data:
-		x.append(elm[0].strftime("%b %d"))
-		cities = elm[1]['result']['cities']
-		for a_city in cities:
-			if city.lower() in a_city['lowerName']:
-				y.append(float(a_city['gasoline']))
-
+	# elm = tuple --> (datetime, price_string)
+	for date, price in data:
+		x.append(date.strftime("%b %d"))
+		y.append(float(price))
 	return (x, y)
 
 
 # create a plot of the date
-def get_plot(data, fileName=None):
+def get_plot(data, fileName=None, days=30):
+
+	try:
+		days = -abs(days)
+	except:
+		print("Error: days parameter is not an integer")
+		print("\tDefaulting to entire dataset")
+		days = 0
 
 	try:
 		import matplotlib.pyplot as plt
 
-		x, y = get_XY(data)
+		x, y = get_XY(data[days:])
 
 		# set figure size
 		plt.figure(figsize=(12,6), dpi=200)
@@ -50,7 +52,7 @@ def get_plot(data, fileName=None):
 		plt.ylabel('Price')
 		  
 		# # giving a title to my graph
-		plt.title(str(len(data))+' Day Gas Price in '+city)
+		plt.title(str(len(data[days:]))+' Day Gas Price in '+zipCode)
 
 		# rotate x tick labels to fit properly
 		plt.xticks(rotation=30)
@@ -66,73 +68,6 @@ def get_plot(data, fileName=None):
 	except ModuleNotFoundError:
 		print("MatPlotLib is not installed")
 		return None
-
-
-
-# get gas price by state (USA)
-def get_gas_data(**call_api_using):
-	x = ''
-	y = ''
-	stateCode = ''
-	use_coordinates = False
-
-	# iterate over all arguments passed
-	for k, v in call_api_using.items():
-		k = k.lower()
-		if k == 'x':
-			x = v.strip()
-		if k == 'y':
-			y = v.strip()
-		if k == 'state':
-			stateCode = v.strip().upper()
-
-	# verify X,Y cords if they exist
-	if x != '' or y != '':
-		try:
-			float(x)
-			float(y)
-		except:
-			print("X,Y coordinates: "+str((x, y))+" is invalid.\nPleae fix in "+configFile)
-		else:
-			use_coordinates = True
-
-	# if both X,Y and state are give, prioritize the coordinates
-	if use_coordinates is True and stateCode != '':
-		print("Prioritizing X,Y coordinates insted of state short code: "+stateCode
-			+"\nIf you only want to use state short code, then plase remove X,Y coordinates from "+configFile)
-
-	# verify state code is correct
-	if use_coordinates is False and len(stateCode) != 2:
-		sys.exit(str(stateCode)+" is an invalid US state short code.\nPlease fix in "+configFile)
-	
-	# if nothing is given
-	if use_coordinates is False and stateCode == '':
-		sys.exit("No valid form of API call given. Received: "+str((x, y, stateCode))
-			+"\nPlease fix in "+configFile)
-
-	conn = http.client.HTTPSConnection("api.collectapi.com")
-
-	headers = {
-		'content-type': "application/json",
-		'authorization': "apikey "+token
-		}
-
-	if use_coordinates is True:
-		conn.request("GET", "/gasPrice/fromCoordinates?lng="+x+"&lat="+y, headers=headers)
-	else:
-		conn.request("GET", "/gasPrice/stateUsaPrice?state="+stateCode, headers=headers)
-
-	res = conn.getresponse()
-	data = res.read()
-
-	return json.loads(data.decode("utf-8")) # returns a dict
-
-
-# (NOT USED) check for new month to backup data to HDD instead of RamDisk
-def end_of_month(dt):
-	todays_month = dt.month
-	tomorrows_month = (dt + datetime.timedelta(days=1)).month
-	return True if tomorrows_month != todays_month else False
 
 
 # safe/load data to/from file
@@ -154,81 +89,58 @@ def saveLoad(type, data, fileName):
 		return False
 
 
-# find a city's gas price in data
-def findCity(city, returnType, data):
-	for cities in data['result']['cities']:
-		if city.lower() in str(cities).lower():
-			regular = float(cities['gasoline'])
-			midGrade = float(cities['midGrade'])
-			premium = float(cities['premium'])
-			diesel = float(cities['diesel'])
-
-			if returnType == 'all':
-				return (city +"\n---------------\nRegular: "+str(regular)+"\nMidGrade: "+str(midGrade)+"\nPremium: "+str(premium)+"\nDiesel: "+str(diesel)+"\n")
-			elif returnType == 'reg':
-				return regular
-			elif returnType == 'mid':
-				return regular
-			elif returnType == 'pre':
-				return premium
-			elif returnType == 'die':
-				return diesel
-			else:
-				print("DataType: "+returnType+" does not exist")
-				return False
-	print(city + " does not exist in dataset")
-	return False
-
-
 # compare gas price
-def compareGasPrice(city, compareType, data):
+def compareGasPrice(data, days=30):
+
+	try:
+		days = -abs(days)
+	except:
+		print("Error: days parameter is not an integer")
+		print("\tDefaulting to last 30 days")
+		days = -30
 
 	# make sure queue is not empty
 	if len(data) == 0:
 		print("Not data in dataset")
 		return False
 
-	# make sure a value exists for the city in data
-	todaysVal = float(findCity(city, compareType, data[-1][1]))
-	if todaysVal == False:
-		print("No comparison made")
-		return False
-
-	lowestIndex = 99999
-	lowestVal = 9999999
-	highestIndex = 99999
-	highestVal = 0
+	lowestPrice = 9999999
+	highestPrice = 0
 	today = data[-1][0]	# datetime object
+	todaysPrice = float(data[-1][1])
+	lowestDay = None
+	highestDay = None
 
 	# find lowest day of gas price in dataset
-	for i in range(len(data)):
-		curVal = float(findCity(city, compareType, data[i][1]))
-		curDate = data[i][0]
+	for date, price in data[days:]:
+
+		curPrice = float(price)
+		curDate = date
 
 		# find lowest
-		if lowestVal >= curVal:
-			lowestIndex = i
-			lowestVal = curVal
+		if lowestPrice >= curPrice:
+			lowestDay = curDate
+			lowestPrice = curPrice
 
 		# find highest
-		if highestVal <= curVal:
-			highestVal = curVal
-			highestIndex = i
+		if highestPrice <= curPrice:
+			highestPrice = curPrice
+			highestDay = curDate
 
 	# compare lowerest price with todays price
-	if lowestVal >= todaysVal:
-		return ("Today is a great time to buy.\n$"+str(round(todaysVal, 2))+" in "+city)
+	if lowestPrice >= todaysPrice:
+		return ("Today is a great time to buy.\n$"+str(round(todaysPrice, 2))+" in "+zipCode)
 	else:
-		lowestDay = today - data[lowestIndex][0]
-		highestDay = today - data[highestIndex][0]
+		lowestDay = today - lowestDay
+		highestDay = today - highestDay
 
-		output = "Today is $"+str(round(todaysVal, 2))
-		output += "\n\nLowest was "+str(lowestDay.days)+" days ago in "+city+" at $"+str(round(lowestVal, 2))
-		output += " a difference of $"+str(round((todaysVal - lowestVal), 2))
-		output += " ("+str(diff(todaysVal, lowestVal))+"%)"
+		output = "Today is $"+str(round(todaysPrice, 2))
+		output += "\n\nLowest was "+str(lowestDay.days)+" days ago in "+zipCode+" at $"+str(round(lowestPrice, 2))
+		output += " a difference of $"+str(round((todaysPrice - lowestPrice), 2))
+		output += " ("+str(diff(todaysPrice, lowestPrice))+"%)"
 
 		if highestDay.days > 0:
-			output += "\n\nHighest was "+str(highestDay.days)+" days ago at $"+str(round(highestVal, 2))
+			output += "\n\nHighest was "+str(highestDay.days)+" days ago at $"+str(round(highestPrice, 2))
 		else:
 			output += "\n\nHighest is today."
 			
@@ -248,13 +160,11 @@ def initialize():
 	path = Path(configFile)
 	if path.exists():
 		print("Found config file: "+configFile)
-		global state
-		global city
 		global sender
 		global password
 		global receiver
-		global token
 		global dataFile
+		global zipCode
 		with open(configFile, 'r') as file:
 			lines = file.readlines()
 		
@@ -265,34 +175,27 @@ def initialize():
 				print("error: "+str(line)+ " is missing argument(s)")
 				continue
 			elif len(line) == 2:
-				if 'state' == option:
-					state = line[1].upper()
-				if 'city' == option:
-					city = line[1]
+				if 'zip' == option:
+					zipCode = line[1]
 				if 'receiver' == option:
 					receiver = line[1]
-				if 'token' == option:
-					token = line[1]
 				if 'data' == option:
 					dataFile = line[1]
 					dataFilePath = Path(dataFile)
 					# create data file if it does not exist
 					if not dataFilePath.exists():
-						d = deque(maxlen=30)  # only holds 30 items
+						# d = deque(maxlen=30)  # only holds 30 items
+						d = []
 						saveLoad('save', d, dataFile)
 			elif len(line) == 3 and 'sender' == option:
 				sender = line[1]
 				password = line[2]
-			elif len(line) >= 3 and 'city' == option:
-				for name in line[1:]:
-					city += name+" "
-				city = city.strip()
 			else:
 				print("error: "+str(line)+" has unusable arguments. Please fix")
 		
 		# required items to run app
-		required = [state, city, sender, password, receiver, token, dataFile]
-		req_text = ['state', 'city', 'sender', 'password', 'receiver', 'token', 'data']
+		required = [ sender, password, receiver, dataFile, zipCode]
+		req_text = ['sender', 'password', 'receiver', 'data', 'zip']
 		missingItems = ''
 
 		# if any item in reqired is missing, then print error and exit
@@ -304,30 +207,30 @@ def initialize():
 
 	else:
 		parser = argparse.ArgumentParser(description='Notifies user when GAS price is low through email')
-		parser.add_argument('-s', '--state', help='Shortcode of an US state', required=True)
-		parser.add_argument('-c', '--city', help='Name of a city within the chosen US state', required=True)
+		parser.add_argument('-s', '--state', help='Shortcode of an US state', required=False)
+		parser.add_argument('-c', '--city', help='Name of a city within the chosen US state', required=False)
 		parser.add_argument('-e', '--sender', help='the sender email address to send emails from', required=True)
 		parser.add_argument('-r', '--receiver', help='the receiver email address', required=True)
-		parser.add_argument('-t', '--token', help='api token to get data from (https://collectapi.com/api/gasPrice/gas-prices-api/usaStateCode)', required=True)
+		parser.add_argument('-t', '--token', help='api token to get data from (https://collectapi.com/api/gasPrice/gas-prices-api/usaStateCode)', required=False)
 		parser.add_argument('-d', '--data', help='exact location of where the data will be stored', required=False)
+		parser.add_argument('-z', '--zip', help='Zip Code of desired location for its Gas price', required=True)
 
 		args = parser.parse_args()
 
 		os.makedirs(os.path.dirname(configFile), exist_ok=True)
 
-		output = ('state ' + args.state
-				+ '\ncity ' + args.city
-				+ '\nsender ' + args.sender
+		output = ('sender ' + args.sender
 				+ '\nreceiver ' + args.receiver
-				+ '\ntoken ' + args.token)
+				+ '\nzip ' + args.zip)
 		if args.data is not None:
 			output += '\ndata ' + args.data
 		else:
-			output += '\n data ' + str(Path.home())+'/GasNotify/gas_data_'+args.state+'.pkl'
+			output += '\ndata ' + str(Path.home())+'/GasNotify/gas_data_'+args.zip+'.pkl'
 
 		with open(configFile, 'w') as f:
 			f.write(output)
-		sys.exit("Open "+configFile+"\nand add SENDER's password beside. e.g: sender myEmail@gmail.com 12345678")
+		print("Open "+configFile+"\nand add SENDER's password beside. e.g: sender myEmail@gmail.com 12345678")
+		sys.exit(1)
 
 	print("Initialization complete ...")
 
@@ -393,50 +296,42 @@ def send_email(body, plot=None):
 
 
 # update date using API call
-def update(api_call_type):
-	dataNY = saveLoad('load', None, dataFile)
+def update():
+	data = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
 
-	# prevent new data addition if it already exists
-	for elm in dataNY:
-		if today in elm:
-			return dataNY
+	# prevent duplicate date (modify instead of new addition)
+	if today == data[-1][0]:
+		del data[-1]
 
-	# else get new data
-	if type(api_call_type) == tuple:	# X,Y coordinates
-		gas = get_gas_data(x=str(api_call_type[0]), y=str(api_call_type[1]))
-		print("API call completed ...")
-	elif type(api_call_type) == str:	# US State (eg: NY)
-		gas = get_gas_data(state=api_call_type)
-		print("API call completed ...")
-	else:
-		sys.exit("Invalid API call type")
+	gas = gb.get_gb_data(zipCode)
 
-	# if API call is successful add to database
-	if gas['success'] is True and len(gas['result']) > 0:
-		dataNY.append((today, gas))
-		saveLoad('save', dataNY, dataFile)
+	# if new gas data was succesfully retrieved, then add to database
+	if gas is not None:
+		data.append((today, str(gas[0][2])))
+		saveLoad('save', data, dataFile)
 		print("New gas data added to database ..")
 
 	# else notify about error
 	else:
-		msg = "Subject: Gas App ALERT\n\nAPI call failed\n\n"+str(gas)
+		msg = "Subject: Gas App ALERT\n\nCould not scrape data from Gas Buddy\n\n"
 		send_email_OLD(sender, receiver, msg)
-		sys.exit(msg)
+		print(msg)
+		sys.exit(9)
 
-	return dataNY
+	return data
 
 
 # make sure this script is run directly and not as a module
 if __name__ == "__main__":
 	initialize()
-	dataNY = update(state)	# API serves invalid data when using X,Y coords. Defaulting to state again
-	# dataNY = saveLoad('load', None, dataFile)	# test
-	msg = compareGasPrice(city, 'reg', dataNY)
+	data = update()
+	# data = saveLoad('load', None, dataFile)	# test
+	msg = compareGasPrice(data)
 	if sys.stdout.isatty() is True:
 		print(msg)
 	else:
-		plot = get_plot(dataNY, "plot.png")
+		plot = get_plot(data, "plot.png", days=30)
 		send_email(msg, plot)	# new email function
 		# send_email(sender, receiver, msg)	# old email function
 
