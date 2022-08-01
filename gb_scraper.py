@@ -20,6 +20,18 @@ def verify_zipCode(zipCode):
 	return zipCode[0]
 
 
+# get median
+def get_median(dataList):
+	n = len(dataList)
+	if n % 2 == 0:
+		median1 = dataList[n//2]
+		median2 = dataList[n//2 - 1]
+		median = (median1 + median2)/2
+	else:
+		median = dataList[n//2]
+	return median
+
+
 # get soup object
 def get_soup(zip_code):
 	verified_zip_code = verify_zipCode(zip_code)
@@ -80,7 +92,7 @@ def get_gb_data(input_var):
 		all_data.append(station_data)
 
 	all_data.sort(key = sort_key)
-	return all_data
+	return (get_median(all_data), all_data)
 
 
 # format gas price (remove $ sign)
