@@ -1,5 +1,4 @@
 import http.client, pickle, json, datetime, argparse, os, sys
-# from collections import deque
 from pathlib import Path
 import gb_scraper as gb
 
@@ -33,7 +32,7 @@ def get_plot(data, fileName=None, days=30):
 	except:
 		print("Error: days parameter is not an integer")
 		print("\tDefaulting to entire dataset")
-		days = 0
+		days = 0	# 0 = every day in dataset
 
 	try:
 		import matplotlib.pyplot as plt
@@ -184,7 +183,6 @@ def initialize():
 					dataFilePath = Path(dataFile)
 					# create data file if it does not exist
 					if not dataFilePath.exists():
-						# d = deque(maxlen=30)  # only holds 30 items
 						d = []
 						saveLoad('save', d, dataFile)
 			elif len(line) == 3 and 'sender' == option:
@@ -326,12 +324,10 @@ def update():
 if __name__ == "__main__":
 	initialize()
 	data = update()
-	# data = saveLoad('load', None, dataFile)	# test
 	msg = compareGasPrice(data)
 	if sys.stdout.isatty() is True:
 		print(msg)
 	else:
 		plot = get_plot(data, "plot.png", days=30)
 		send_email(msg, plot)	# new email function
-		# send_email(sender, receiver, msg)	# old email function
 
