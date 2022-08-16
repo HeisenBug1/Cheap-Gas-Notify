@@ -55,7 +55,7 @@ def get_gb_data(input_var):
 		soup = input_var
 
 	else:
-		print("Error: "+type(input_var)+" received.\nRequired either zip code or bs4 object")
+		print("Error: "+str(type(input_var))+" received.\nRequired either zip code or bs4 object")
 		sys.exit(2)
 
 	# get all relative HTML elements containing gas price data
