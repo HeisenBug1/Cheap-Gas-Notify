@@ -3,39 +3,32 @@ from bs4 import BeautifulSoup
 
 
 # verify zipcode
-def verify_zipCode(zipCode):
+def verify_zipcode(zipcode):
 
-	if type(zipCode) is not str:
-		zipCode = str(zipCode)
-	zipCode.strip()
+	if type(zipcode) is not str:
+		zipcode = str(zipcode)
+	zipcode.strip()
 
-	zipCode_length = len(zipCode)
+	zipcode_length = len(zipcode)
 
-	pattern = re.compile(r"^[0-9]+$")
-	zipCode = pattern.match(zipCode)
+	pattern = re.compile(r"^[\d]+$")
+	zipcode = pattern.match(zipcode)
 
-	if zipCode_length != 5 or zipCode is None:
+	if zipcode_length != 5 or zipcode is None:
 		return None
 
-	return zipCode[0]
+	return zipcode[0]
 
 
 # get median
-def get_median(dataList):
-	n = len(dataList)
-	# if n % 2 == 0:
-	# 	median1 = dataList[n//2]
-	# 	median2 = dataList[n//2 - 1]
-	# 	median = (median1 + median2)/2
-	# else:
-	# 	median = dataList[n//2]
-	# return median
-	return dataList[n//2]
+def get_median(datalist):
+	n = len(datalist)
+	return datalist[n//2]
 
 
 # get soup object
 def get_soup(zip_code):
-	verified_zip_code = verify_zipCode(zip_code)
+	verified_zip_code = verify_zipcode(zip_code)
 	if verified_zip_code is None:
 		print("Error: "+str(zip_code)+" is not a correct zip code")
 		sys.exit(1)
@@ -111,6 +104,7 @@ def sort_key(element):
 
 
 # format gas station address
+# 123 Jackson St, CityName, NY  -->  [123 Jackson St][CityName][NY]
 def format_address(address):
 	was_space = False
 	index = 0
@@ -119,17 +113,15 @@ def format_address(address):
 		if was_space == False and char.isupper():
 			# found index in string that separates street with city
 			break
-			# return index
 		if char == ' ':
 			was_space = True
 		else:
 			was_space = False
 		index += 1
 
-	street = address[:index]
-	city, state = address[index:].split(",")
+	street = address[:index]	# 123 Jackson St
+	city, state = address[index:].split(",")	# CityName, NY
 	city = city.strip()
 	state = state.strip()
 
-	# return tuple (street, city, state)
 	return (street, city, state)
