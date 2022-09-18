@@ -104,7 +104,7 @@ def sort_key(element):
 
 
 # format gas station address
-# 123 Jackson St, CityName, NY  -->  [123 Jackson St][CityName][NY]
+# "123 Jump St, Manhattan, NY"  -->  ("123 Jump St", "Manhattan", "NY")
 def format_address(address):
 	was_space = False
 	index = 0
