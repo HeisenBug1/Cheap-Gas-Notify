@@ -298,14 +298,13 @@ def update():
 	data = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
 
-	# prevent duplicate date (modify instead of new addition)
-	if today == data[-1][0]:
-		del data[-1]
-
 	gas = gb.get_gb_data(zipCode)
 
 	# if new gas data was succesfully retrieved, then add to database
 	if gas is not None:
+		# prevent duplicate date (modify instead of new addition)
+		if today == data[-1][0]:
+			del data[-1]
 		data.append((today, str(gas[0][2])))
 		saveLoad('save', data, dataFile)
 		print("New gas data added to database ..")
