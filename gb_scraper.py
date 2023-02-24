@@ -41,6 +41,9 @@ def get_soup(search: Union[str, int, tuple]):
 
 	elif search_type == tuple:
 		lat, lng = search
+		if type(lat) == str and type(lng) == str:
+			lat = float(lat)
+			lng = float(lng)
 		if type(lat) == float and type(lng) == float:
 			query = 'lat='+str(lat)+'&lng='+str(lng)
 			print(query)
