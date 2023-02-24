@@ -76,10 +76,11 @@ def get_gb_data(input_var):
 		if price is None:
 			continue
 
-		station_name = elm.find("h3", attrs={'class': re.compile('^header.*')})
+		station_name = elm.find("h3", attrs={'class': re.compile('^header.*')}).find('a')
 		station_address = elm.find("div", attrs={'class': re.compile('^StationDisplay-module__address.*')})
 
-		station_data = (station_name.text, format_address(station_address.text), price)
+		station_data = (station_name.decode_contents(), format_address(station_address.decode_contents()), price)
+	
 		# call function here to verify data before appending to all_data
 		
 		# add data to list as a tuple for each iteration
@@ -106,22 +107,14 @@ def sort_key(element):
 # format gas station address
 # "123 Jump St, Manhattan, NY"  -->  ("123 Jump St", "Manhattan", "NY")
 def format_address(address):
-	was_space = False
-	index = 0
 
-	for char in address:
-		if was_space == False and char.isupper():
-			# found index in string that separates street with city
-			break
-		if char == ' ':
-			was_space = True
-		else:
-			was_space = False
-		index += 1
+	address = address.split('<br/>')
 
-	street = address[:index]	# 123 Jackson St
-	city, state = address[index:].split(",")	# CityName, NY
-	city = city.strip()
-	state = state.strip()
+	street = address[0].strip()
+
+	address = address[1].split(',')
+
+	city = address[0].strip()
+	state = address[1].strip()
 
 	return (street, city, state)
