@@ -1,5 +1,6 @@
 import requests, re, sys
 from bs4 import BeautifulSoup
+from typing import Union
 
 
 # verify zipcode
@@ -27,12 +28,30 @@ def get_median(datalist):
 
 
 # get soup object
-def get_soup(zip_code):
-	verified_zip_code = verify_zipcode(zip_code)
-	if verified_zip_code is None:
-		print("Error: "+str(zip_code)+" is not a correct zip code")
-		sys.exit(1)
-	URL = "https://www.gasbuddy.com/home?search="+ verified_zip_code +"&fuel=1&maxAge=0&method=credit"
+def get_soup(search: Union[str, int, tuple]):
+
+	search_type = type(search)
+
+	if search_type == str or search_type == int:
+		query = verify_zipcode(search)
+		if query is None:
+			print("Error: "+str(search)+" is not a correct zip code")
+			sys.exit(1)
+		URL = "https://www.gasbuddy.com/home?search="+ query +"&fuel=1&maxAge=0&method=credit"
+
+	elif search_type == tuple:
+		lat, lng = search
+		if type(lat) == float and type(lng) == float:
+			query = 'lat='+str(lat)+'&lng='+str(lng)
+			print(query)
+			URL = "https://www.gasbuddy.com/home?search=fuel=1&maxAge=0&method=credit&"+query
+		else:
+			print(f'Invalid Lat & Lng received: {lat}, {lng}')
+			sys.exit(2)
+	else:
+		print(f'Invalid argument in get_soup(). Required: Lat,Lng OR ZipCode. Received: {str(search)}')
+		sys.exit(3)
+
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36'}
 	page = requests.get(URL, headers=headers)
 	return BeautifulSoup(page.content, "html.parser")
@@ -41,7 +60,7 @@ def get_soup(zip_code):
 # extract data from gas buddy
 def get_gb_data(input_var):
 
-	if type(input_var) is str or type(input_var) is int:
+	if type(input_var) is Union[str, int, tuple]:
 		soup = get_soup(input_var)
 
 	elif type(input_var) is BeautifulSoup:
