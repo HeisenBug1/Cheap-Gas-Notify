@@ -4,13 +4,14 @@ import gb_scraper as gb
 
 
 # global variables
-configFile = ''
-args = ''
-sender = ''
-password = ''
-receiver = ''
-dataFile = ''
+configFile = None
+args = None
+sender = None
+password = None
+receiver = None
+dataFile = None
 zipCode = None
+gps = None
 
 
 # get X, Y value for plotting
@@ -164,6 +165,7 @@ def initialize():
 		global receiver
 		global dataFile
 		global zipCode
+		global gps
 		with open(configFile, 'r') as file:
 			lines = file.readlines()
 		
@@ -171,11 +173,13 @@ def initialize():
 			line = line.strip().split()
 			option = line[0].lower()
 			if len(line) == 1:
-				print("error: "+str(line)+ " is missing argument(s)")
+				print(f"error: {str(line)} is missing argument(s)")
 				continue
 			elif len(line) == 2:
 				if 'zip' == option:
 					zipCode = line[1]
+				if 'gps' == option:
+					gps = tuple(line[1].split(','))
 				if 'receiver' == option:
 					receiver = line[1]
 				if 'data' == option:
@@ -188,20 +192,36 @@ def initialize():
 			elif len(line) == 3 and 'sender' == option:
 				sender = line[1]
 				password = line[2]
+			elif len(line) == 3 and 'gps' == option:
+				lat = line[1].strip().split(',')
+				lng = line[2].strip()
+				gps = (lat[0], lng)
 			else:
 				print("error: "+str(line)+" has unusable arguments. Please fix")
 		
 		# required items to run app
-		required = [ sender, password, receiver, dataFile, zipCode]
-		req_text = ['sender', 'password', 'receiver', 'data', 'zip']
+		required = [ sender, password, receiver, dataFile, zipCode, gps]
+		req_text = ['sender', 'password', 'receiver', 'data', 'zip', 'gps']
 		missingItems = ''
-
+		
+		print("Checking for required variables...")
 		# if any item in reqired is missing, then print error and exit
 		for i in range(len(required)):
-			if required[i] == '':
+			if required[i] is None:
+				# skip including missing item if either zip or gps is present
+				if req_text[i] == 'zip':
+					if gps is not None:
+						continue
+				elif req_text[i] == 'gps':
+					if zipCode is not None:
+						continue
 				missingItems += req_text[i]+", "
 		if missingItems != '':
-			sys.exit("Error: "+configFile+" is missing arguments in:\n"+missingItems)
+			print(f"Error: {configFile} is missing arguments in:\n{missingItems}")
+			if zipCode is None or gps is None:
+				print('Please include either GPS or ZIP code in config file')
+				print('Example:\n\tgps 42.123123,-42.123123\nOR\n\tzip 12345')
+				sys.exit()
 
 	else:
 		parser = argparse.ArgumentParser(description='Notifies user when GAS price is low through email')
@@ -211,19 +231,29 @@ def initialize():
 		parser.add_argument('-r', '--receiver', help='the receiver email address', required=True)
 		parser.add_argument('-t', '--token', help='api token to get data from (https://collectapi.com/api/gasPrice/gas-prices-api/usaStateCode)', required=False)
 		parser.add_argument('-d', '--data', help='exact location of where the data will be stored', required=False)
-		parser.add_argument('-z', '--zip', help='Zip Code of desired location for its Gas price', required=True)
+		parser.add_argument('-z', '--zip', help='Zip Code of desired location for its Gas price', required=False)
+		parser.add_argument('-g', '--gps', help='GPS cordinate pair (Lat,Long)', required=False)
 
 		args = parser.parse_args()
 
 		os.makedirs(os.path.dirname(configFile), exist_ok=True)
 
 		output = ('sender ' + args.sender
-				+ '\nreceiver ' + args.receiver
-				+ '\nzip ' + args.zip)
+				+ '\nreceiver ' + args.receiver)
+		
+		# check if either GPS or zip code is provided
+		if args.gps is not None:
+			output += '\ngps ' + args.gps
+		elif args.zip is not None:
+			output += '\nzip ' + args.zip
+		else:
+			sys.exit('Error: Required either GPS cordinates or ZIP code')
+
+		# create data file location if not provided
 		if args.data is not None:
 			output += '\ndata ' + args.data
 		else:
-			output += '\ndata ' + str(Path.home())+'/GasNotify/gas_data_'+args.zip+'.pkl'
+			output += '\ndata ' + str(Path.home())+'/GasNotify/gas_data.pkl'
 
 		with open(configFile, 'w') as f:
 			f.write(output)
@@ -298,7 +328,12 @@ def update():
 	data = saveLoad('load', None, dataFile)
 	today = datetime.date.today()
 
-	gas = gb.get_gb_data(zipCode)
+	if gps is not None:
+		gas = gb.get_gb_data(gps)
+	elif zipCode is not None:
+		gas = gb.get_gb_data(zipCode)
+	else:
+		sys.exit("Missing GPS or ZIP code")
 
 	# if new gas data was succesfully retrieved, then add to database
 	if gas is not None:
