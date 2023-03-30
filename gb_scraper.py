@@ -63,6 +63,7 @@ def get_soup(search: Union[str, int, tuple]):
 # extract data from gas buddy
 def get_gb_data(input_var):
 
+	# BUG: type check for str or int or tuple not working
 	if type(input_var) is Union[str, int, tuple]:
 		soup = get_soup(input_var)
 
