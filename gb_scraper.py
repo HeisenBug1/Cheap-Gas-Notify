@@ -63,11 +63,11 @@ def get_soup(search: Union[str, int, tuple]):
 # extract data from gas buddy
 def get_gb_data(input_var):
 
-	# BUG: type check for str or int or tuple not working
-	if type(input_var) is Union[str, int, tuple]:
+	# type check for str or int or tuple not working
+	if isinstance(input_var, (str, int, tuple)):
 		soup = get_soup(input_var)
 
-	elif type(input_var) is BeautifulSoup:
+	elif isinstance(input_var, BeautifulSoup):
 		soup = input_var
 
 	else:
@@ -103,8 +103,6 @@ def get_gb_data(input_var):
 		station_address = elm.find("div", attrs={'class': re.compile('^StationDisplay-module__address.*')})
 
 		station_data = (station_name.decode_contents(), format_address(station_address.decode_contents()), price)
-	
-		# call function here to verify data before appending to all_data
 		
 		# add data to list as a tuple for each iteration
 		all_data.append(station_data)
